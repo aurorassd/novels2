@@ -4,105 +4,121 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI小説作成支援ツール</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"> <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <button id="menu-button">☰ 小説リスト</button>
-        <h1>AI小説作成支援ツール</h1>
+        <div class="header-content">
+            <button id="menu-button" aria-label="小説リストを開く"><i class="fas fa-bars"></i></button>
+            <h1>AI小説作成支援ツール</h1>
+            <div class="header-spacer"></div> <!-- 右側のスペース確保用 -->
+        </div>
     </header>
 
     <div id="novel-menu" class="menu">
-        <h2>小説リスト (最大10件)</h2>
+        <div class="menu-header">
+            <h2>小説リスト</h2>
+            <button id="close-menu-button" aria-label="小説リストを閉じる"><i class="fas fa-times"></i></button>
+        </div>
+        <p class="menu-info">(最大10件)</p>
         <ul id="novel-list">
             <!-- サイドメニューの小説リスト -->
         </ul>
-        <button id="create-new-novel-button">+ 新規小説作成</button>
+        <button id="create-new-novel-button"><i class="fas fa-plus"></i> 新規小説作成</button>
     </div>
+    <div id="menu-overlay" class="menu-overlay hidden"></div>
+
 
     <main id="app">
         <!-- トップページの小説リスト -->
-        <section id="novel-list-main" class="hidden">
-            <h2>保存されている小説</h2>
+        <section id="novel-list-main" class="hidden card">
+            <h2><i class="fas fa-book"></i> 保存されている小説</h2>
             <ul id="main-novel-list-ul">
                 <!-- メインエリアの小説リスト -->
             </ul>
             <p id="no-novels-message" class="hidden">
-                まだ小説がありません。左上のメニューから「+ 新規小説作成」ボタンで作成してください。
+                まだ小説がありません。<br class="sp-only">左上のメニューから「+ 新規小説作成」ボタンで作成してください。
             </p>
         </section>
 
         <!-- 小説詳細エリア -->
         <div id="novel-details" class="hidden">
             <!-- 小説基本設定 -->
-            <section id="novel-setup">
+            <section id="novel-setup" class="card">
                 <div class="collapsible-section">
-                    <button class="toggle-button">▼ タイトル・年号・開始年</button>
+                    <button class="toggle-button">
+                        <i class="fas fa-pen-nib icon"></i> タイトル・年号・開始年 <i class="fas fa-chevron-down toggle-icon"></i>
+                    </button>
                     <div class="collapsible-content initially-open">
                         <label for="novel-title">タイトル:</label>
                         <input type="text" id="novel-title" placeholder="小説のタイトルを入力">
                         <div class="button-group">
-                            <button class="copy-btn" data-target="novel-title">コピー</button>
-                            <button class="paste-btn" data-target="novel-title">ペースト</button>
+                            <button class="copy-btn" data-target="novel-title"><i class="far fa-copy"></i> コピー</button>
+                            <button class="paste-btn" data-target="novel-title"><i class="far fa-clipboard"></i> ペースト</button>
                         </div>
 
                         <label for="novel-era-name">年号:</label>
                         <input type="text" id="novel-era-name" placeholder="例: 西暦, 令和など">
                         <div class="button-group">
-                            <button class="copy-btn" data-target="novel-era-name">コピー</button>
-                            <button class="paste-btn" data-target="novel-era-name">ペースト</button>
+                            <button class="copy-btn" data-target="novel-era-name"><i class="far fa-copy"></i> コピー</button>
+                            <button class="paste-btn" data-target="novel-era-name"><i class="far fa-clipboard"></i> ペースト</button>
                         </div>
 
                         <label for="novel-start-year">開始年 (半角数字):</label>
                         <input type="number" id="novel-start-year" placeholder="例: 2024">
                         <div class="button-group">
-                            <button class="copy-btn" data-target="novel-start-year">コピー</button>
-                            <button class="paste-btn" data-target="novel-start-year">ペースト</button>
+                            <button class="copy-btn" data-target="novel-start-year"><i class="far fa-copy"></i> コピー</button>
+                            <button class="paste-btn" data-target="novel-start-year"><i class="far fa-clipboard"></i> ペースト</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="collapsible-section">
-                    <button class="toggle-button">▼ 舞台設定</button>
+                    <button class="toggle-button">
+                        <i class="fas fa-landmark icon"></i> 舞台設定 <i class="fas fa-chevron-down toggle-icon"></i>
+                    </button>
                     <div class="collapsible-content initially-open">
                         <label for="novel-setting">舞台設定:</label>
-                        <textarea id="novel-setting" rows="10" placeholder="時代、場所、世界観など"></textarea>
+                        <textarea id="novel-setting" rows="8" placeholder="時代、場所、世界観など"></textarea>
                         <div class="button-group">
-                            <button class="copy-btn" data-target="novel-setting">コピー</button>
-                            <button class="paste-btn" data-target="novel-setting">ペースト</button>
+                            <button class="copy-btn" data-target="novel-setting"><i class="far fa-copy"></i> コピー</button>
+                            <button class="paste-btn" data-target="novel-setting"><i class="far fa-clipboard"></i> ペースト</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="collapsible-section">
-                    <button class="toggle-button">▼ キャラクター設定</button>
+                    <button class="toggle-button">
+                        <i class="fas fa-users icon"></i> キャラクター設定 <i class="fas fa-chevron-down toggle-icon"></i>
+                    </button>
                     <div class="collapsible-content initially-open">
                         <label for="novel-characters">キャラクター設定:</label>
-                        <textarea id="novel-characters" rows="20" placeholder="登場人物の名前、性格、役割など"></textarea>
+                        <textarea id="novel-characters" rows="15" placeholder="登場人物の名前、性格、役割など"></textarea>
                         <div class="button-group">
-                            <button class="copy-btn" data-target="novel-characters">コピー</button>
-                            <button class="paste-btn" data-target="novel-characters">ペースト</button>
+                            <button class="copy-btn" data-target="novel-characters"><i class="far fa-copy"></i> コピー</button>
+                            <button class="paste-btn" data-target="novel-characters"><i class="far fa-clipboard"></i> ペースト</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="collapsible-section">
-                    <button class="toggle-button">▼ 基本設定プロンプト出力</button>
+                     <button class="toggle-button">
+                        <i class="fas fa-file-alt icon"></i> 基本設定プロンプト出力 <i class="fas fa-chevron-down toggle-icon"></i>
+                    </button>
                     <div class="collapsible-content">
                         <label for="combined-novel-prompt">基本設定プロンプト:</label>
-                        <textarea id="combined-novel-prompt" rows="10" readonly></textarea>
-                        <button id="copy-combined-novel-prompt" class="copy-btn wide-btn">基本設定プロンプトをコピー</button>
+                        <textarea id="combined-novel-prompt" rows="8" readonly></textarea>
+                        <button id="copy-combined-novel-prompt" class="copy-btn wide-btn"><i class="far fa-copy"></i> 基本設定プロンプトをコピー</button>
                     </div>
                 </div>
-                 <button id="delete-novel-button" class="danger-btn wide-btn">この小説を削除</button>
+                 <button id="delete-novel-button" class="danger-btn wide-btn"><i class="fas fa-trash-alt"></i> この小説を削除</button>
             </section>
 
-            <hr>
+            <hr class="section-divider">
 
-            <!-- サブタイトルセクション -->
-            <section id="subtitles-section">
-                <h2>各話設定</h2>
-                <button id="add-subtitle-button">+ サブタイトル追加</button>
+            <section id="subtitles-section" class="card">
+                <h2><i class="fas fa-list-ol"></i> 各話設定</h2>
                 <div id="subtitle-list">
                     <!-- サブタイトル入力欄がここに追加される -->
                 </div>
@@ -110,39 +126,36 @@
         </div>
     </main>
 
+    <button id="add-subtitle-button" class="fab-button" aria-label="サブタイトル追加"><i class="fas fa-plus"></i></button>
+
     <!-- サブタイトル入力欄のテンプレート -->
     <template id="subtitle-template">
         <div class="subtitle-entry collapsible-section">
-            <button class="toggle-button">▼ サブタイトル未入力</button>
+            <button class="toggle-button">
+                <span class="toggle-button-text">▼ サブタイトル未入力</span> <i class="fas fa-chevron-down toggle-icon"></i>
+            </button>
             <div class="collapsible-content">
                 <div class="subtitle-controls">
                     <label>サブタイトル: <input type="text" class="subtitle-input" placeholder="各話のサブタイトル"></label>
-                    <div class="subtitle-row">
+                    <div class="subtitle-grid">
                         <label>話数:
                             <select class="episode-select">
-                                <!-- オプションはJSで1-500話生成 -->
                             </select>
                         </label>
                         <label>年:
                             <select class="event-year-select">
-                                <!-- オプションはJSで動的に生成 -->
                             </select>
                         </label>
                         <label>月:
                             <select class="event-month-select">
-                                <!-- オプションはJSで1-12月生成 -->
                             </select>
                         </label>
-                    </div>
-                    <div class="subtitle-row">
                         <label>日:
                             <select class="event-day-select">
-                                <!-- オプションはJSで1-31日生成 -->
                             </select>
                         </label>
                         <label>時間帯:
                             <select class="timezone-select">
-                                <!-- オプションはJSで動的に生成 -->
                             </select>
                         </label>
                         <label>長さ:
@@ -152,53 +165,54 @@
                                 <option value="長尺">長尺</option>
                             </select>
                         </label>
-                    </div>
-                    <div class="subtitle-row">
                         <label>トーン1(高):
                             <select class="tone1-select">
-                                <!-- オプションはJSで動的に生成 -->
                             </select>
                         </label>
                         <label>トーン2(中):
                             <select class="tone2-select">
-                                 <!-- オプションはJSで動的に生成 -->
                             </select>
                         </label>
                         <label>トーン3(低):
                             <select class="tone3-select">
-                                <!-- オプションはJSで動的に生成 -->
                             </select>
                         </label>
                     </div>
-                    <!-- New: Ethics Filter Toggle -->
-                    <div class="subtitle-row ethics-filter-row">
+
+                    <div class="ethics-filter-container">
                         <label class="ethics-filter-label">
                             <input type="checkbox" class="ethics-filter-toggle">
                             倫理フィルターを解除 (自己責任)
-                            <span class="tooltip">ℹ️<span class="tooltip-text">オンにすると、AIがより広範な表現を試みる可能性があります。生成される内容には十分注意し、自己の責任において利用してください。</span></span>
                         </label>
+                        <span class="tooltip-trigger" tabindex="0" aria-describedby="ethics-tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text" id="ethics-tooltip" role="tooltip">
+                                オンにすると、AIがより広範な表現を試みる可能性があります。生成される内容には十分注意し、自己の責任において利用してください。
+                            </span>
+                        </span>
                     </div>
+
                     <label>プロット:
-                        <textarea class="plot-textarea" rows="20" placeholder="この話のあらすじや展開"></textarea>
+                        <textarea class="plot-textarea" rows="15" placeholder="この話のあらすじや展開"></textarea>
                         <div class="button-group">
-                            <button class="copy-btn" data-target-class="plot-textarea">コピー</button>
-                            <button class="paste-btn" data-target-class="plot-textarea">ペースト</button>
+                            <button class="copy-btn" data-target-class="plot-textarea"><i class="far fa-copy"></i> コピー</button>
+                            <button class="paste-btn" data-target-class="plot-textarea"><i class="far fa-clipboard"></i> ペースト</button>
                         </div>
                     </label>
                     <label>特記事項:
-                        <textarea class="notes-textarea" rows="5" placeholder="特にAIに伝えたいこと、注意点など"></textarea>
+                        <textarea class="notes-textarea" rows="4" placeholder="特にAIに伝えたいこと、注意点など"></textarea>
                          <div class="button-group">
-                            <button class="copy-btn" data-target-class="notes-textarea">コピー</button>
-                            <button class="paste-btn" data-target-class="notes-textarea">ペースト</button>
+                            <button class="copy-btn" data-target-class="notes-textarea"><i class="far fa-copy"></i> コピー</button>
+                            <button class="paste-btn" data-target-class="notes-textarea"><i class="far fa-clipboard"></i> ペースト</button>
                         </div>
                     </label>
                 </div>
                  <div class="prompt-output-area">
                     <label>この話のプロンプト出力:</label>
-                    <textarea class="subtitle-prompt-output" rows="15" readonly></textarea>
-                    <button class="copy-subtitle-prompt-button copy-btn wide-btn">この話のプロンプトをコピー</button>
+                    <textarea class="subtitle-prompt-output" rows="10" readonly></textarea>
+                    <button class="copy-subtitle-prompt-button copy-btn wide-btn"><i class="far fa-copy"></i> この話のプロンプトをコピー</button>
                 </div>
-                <button class="delete-subtitle-button danger-btn wide-btn">このサブタイトルを削除</button>
+                <button class="delete-subtitle-button danger-btn wide-btn"><i class="fas fa-trash-alt"></i> このサブタイトルを削除</button>
             </div>
         </div>
     </template>
