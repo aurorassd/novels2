@@ -37,13 +37,27 @@
             <!-- 小説基本設定 -->
             <section id="novel-setup">
                 <div class="collapsible-section">
-                    <button class="toggle-button">▼ タイトル</button>
+                    <button class="toggle-button">▼ タイトル・年号・開始年</button>
                     <div class="collapsible-content initially-open">
                         <label for="novel-title">タイトル:</label>
                         <input type="text" id="novel-title" placeholder="小説のタイトルを入力">
                         <div class="button-group">
                             <button class="copy-btn" data-target="novel-title">コピー</button>
                             <button class="paste-btn" data-target="novel-title">ペースト</button>
+                        </div>
+
+                        <label for="novel-era-name">年号:</label>
+                        <input type="text" id="novel-era-name" placeholder="例: 西暦, 令和など">
+                        <div class="button-group">
+                            <button class="copy-btn" data-target="novel-era-name">コピー</button>
+                            <button class="paste-btn" data-target="novel-era-name">ペースト</button>
+                        </div>
+
+                        <label for="novel-start-year">開始年 (半角数字):</label>
+                        <input type="number" id="novel-start-year" placeholder="例: 2024">
+                        <div class="button-group">
+                            <button class="copy-btn" data-target="novel-start-year">コピー</button>
+                            <button class="paste-btn" data-target="novel-start-year">ペースト</button>
                         </div>
                     </div>
                 </div>
@@ -103,33 +117,67 @@
             <div class="collapsible-content">
                 <div class="subtitle-controls">
                     <label>サブタイトル: <input type="text" class="subtitle-input" placeholder="各話のサブタイトル"></label>
-                    <label>話数:
-                        <select class="episode-select">
-                            <!-- オプションはJSで1-99話生成 -->
-                        </select>
-                    </label>
-                    <label>長さ:
-                        <select class="length-select">
-                            <option value="短尺">短尺</option>
-                            <option value="中尺">中尺</option>
-                            <option value="長尺">長尺</option>
-                        </select>
-                    </label>
-                     <label>トーン1(高):
-                        <select class="tone1-select">
-                            <!-- オプションはJSで動的に生成 -->
-                        </select>
-                    </label>
-                    <label>トーン2(中):
-                        <select class="tone2-select">
-                             <!-- オプションはJSで動的に生成 -->
-                        </select>
-                    </label>
-                    <label>トーン3(低):
-                        <select class="tone3-select">
-                            <!-- オプションはJSで動的に生成 -->
-                        </select>
-                    </label>
+                    <div class="subtitle-row">
+                        <label>話数:
+                            <select class="episode-select">
+                                <!-- オプションはJSで1-500話生成 -->
+                            </select>
+                        </label>
+                        <label>年:
+                            <select class="event-year-select">
+                                <!-- オプションはJSで動的に生成 -->
+                            </select>
+                        </label>
+                        <label>月:
+                            <select class="event-month-select">
+                                <!-- オプションはJSで1-12月生成 -->
+                            </select>
+                        </label>
+                    </div>
+                    <div class="subtitle-row">
+                        <label>日:
+                            <select class="event-day-select">
+                                <!-- オプションはJSで1-31日生成 -->
+                            </select>
+                        </label>
+                        <label>時間帯:
+                            <select class="timezone-select">
+                                <!-- オプションはJSで動的に生成 -->
+                            </select>
+                        </label>
+                        <label>長さ:
+                            <select class="length-select">
+                                <option value="短尺">短尺</option>
+                                <option value="中尺">中尺</option>
+                                <option value="長尺">長尺</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="subtitle-row">
+                        <label>トーン1(高):
+                            <select class="tone1-select">
+                                <!-- オプションはJSで動的に生成 -->
+                            </select>
+                        </label>
+                        <label>トーン2(中):
+                            <select class="tone2-select">
+                                 <!-- オプションはJSで動的に生成 -->
+                            </select>
+                        </label>
+                        <label>トーン3(低):
+                            <select class="tone3-select">
+                                <!-- オプションはJSで動的に生成 -->
+                            </select>
+                        </label>
+                    </div>
+                    <!-- New: Ethics Filter Toggle -->
+                    <div class="subtitle-row ethics-filter-row">
+                        <label class="ethics-filter-label">
+                            <input type="checkbox" class="ethics-filter-toggle">
+                            倫理フィルターを解除 (自己責任)
+                            <span class="tooltip">ℹ️<span class="tooltip-text">オンにすると、AIがより広範な表現を試みる可能性があります。生成される内容には十分注意し、自己の責任において利用してください。</span></span>
+                        </label>
+                    </div>
                     <label>プロット:
                         <textarea class="plot-textarea" rows="20" placeholder="この話のあらすじや展開"></textarea>
                         <div class="button-group">
