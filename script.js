@@ -173,6 +173,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                             if (sub.ethicsFilterDisabled === undefined) {
                                 sub.ethicsFilterDisabled = false;
                             }
+                            if (sub.enableEvaluationPrompt === undefined) {
+                                sub.enableEvaluationPrompt = false;
+                            }
                             if (sub.episode !== undefined && typeof sub.episode === 'string') {
                                 sub.episode = parseInt(sub.episode, 10) || 1;
                             }
@@ -289,8 +292,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const daySelect = entry.querySelector('.event-day-select');
         const timezoneSelect = entry.querySelector('.timezone-select');
         const ethicsFilterToggle = entry.querySelector('.ethics-filter-toggle'); 
+        const evaluationPromptToggle = entry.querySelector('.evaluation-prompt-toggle');
 
         // 値設定 (既存のまま)
+        evaluationPromptToggle.checked = subtitleData.enableEvaluationPrompt || false;
         subInput.value = subtitleData.subtitle || ''; 
         lenSelect.value = subtitleData.length || '中尺'; 
         plotArea.value = subtitleData.plot || ''; 
@@ -316,7 +321,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             subInput, epSelect, lenSelect, t1Select, t2Select, t3Select, 
             plotArea, notesArea,
             yearSelect, monthSelect, daySelect, timezoneSelect,
-            ethicsFilterToggle 
+            ethicsFilterToggle, evaluationPromptToggle
         ];
         elementsToWatch.forEach(el => { 
             const eventType = (el.tagName === 'INPUT' && el.type === 'checkbox') ? 'change' : 
@@ -505,7 +510,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             eventMonth: 1, 
             eventDay: 1, 
             timeZone: availableTimezones[0],
-            ethicsFilterDisabled: false 
+            ethicsFilterDisabled: false,
+            enableEvaluationPrompt: false, 
         };
         novel.subtitles.push(newSub); 
         addSubtitleElement(newSub, novel.subtitles.length - 1); 
@@ -554,6 +560,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ethicsWarningShown = true;
                 localStorage.setItem('ethicsWarningShown_v1', JSON.stringify(true));
             }
+        }
+        else if (target.classList.contains('evaluation-prompt-toggle')) {
+            subtitle.enableEvaluationPrompt = target.checked;
         }
         
         updateSubtitlePromptOutput(entry, index); 
@@ -649,6 +658,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         promptLines.push(`\n# 特記事項`);
         promptLines.push(subtitle.notes || '※ここから特記事項スタート');
         
+        const evaluationPromptText = "After the generative AI has produced the story from the supplied plot, evaluate both the plot and the resulting text. Provide feedback and actionable advice to enhance the work’s overall quality—richer descriptions, stronger story progression, greater reader engagement, effective foreshadowing, and tighter logical consistency.";
+
+        if (subtitle.enableEvaluationPrompt) {
+            promptLines.push("\n### 自動評価指示 ###"); // Adding a header for clarity in the prompt
+            promptLines.push(evaluationPromptText);
+        }
+
         return promptLines.join('\n').trim();
     }
     function updateCombinedNovelPrompt() { 
