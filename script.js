@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const novelStartYearInput = document.getElementById('novel-start-year'); 
     const novelSettingTextarea = document.getElementById('novel-setting');
     const novelCharactersTextarea = document.getElementById('novel-characters');
+    const novelCommonElementsTextarea = document.getElementById('novel-common-elements'); // New
     const combinedNovelPromptTextarea = document.getElementById('combined-novel-prompt');
     const copyCombinedNovelPromptButton = document.getElementById('copy-combined-novel-prompt');
     const deleteNovelButton = document.getElementById('delete-novel-button');
@@ -168,6 +169,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (novel.startYear !== undefined && typeof novel.startYear === 'string') {
                         novel.startYear = parseInt(novel.startYear, 10) || undefined;
                     }
+                    // Ensure commonElements exists
+                    if (novel.commonElements === undefined) {
+                        novel.commonElements = '';
+                    }
                     if (novel.subtitles && Array.isArray(novel.subtitles)) {
                         novel.subtitles.forEach(sub => {
                             if (sub.ethicsFilterDisabled === undefined) {
@@ -253,6 +258,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         novelStartYearInput.value = novel.startYear !== undefined ? novel.startYear : ''; 
         novelSettingTextarea.value = novel.setting || ''; 
         novelCharactersTextarea.value = novel.characters || '';
+        novelCommonElementsTextarea.value = novel.commonElements || ''; // New
         
         updateCombinedNovelPrompt();
         subtitleListContainer.innerHTML = '';
@@ -424,6 +430,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             startYear: currentYear, 
             setting: '', 
             characters: '', 
+            commonElements: '', // Add this line
             subtitles: [] 
         };
         novels.push(newNovel); 
@@ -470,6 +477,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         else if (id === 'novel-setting') novel.setting = value; 
         else if (id === 'novel-characters') novel.characters = value;
+        else if (id === 'novel-common-elements') novel.commonElements = value; // New
         
         updateCombinedNovelPrompt(); 
         saveData();
@@ -648,6 +656,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         promptLines.push(subtitle.plot || '※ここからプロットスタート');
         promptLines.push(`\n# 特記事項`);
         promptLines.push(subtitle.notes || '※ここから特記事項スタート');
+
+        if (novel.commonElements && novel.commonElements.trim() !== '') {
+            promptLines.push("\n# 共通要素");
+            promptLines.push(novel.commonElements.trim());
+        }
         
         return promptLines.join('\n').trim();
     }
@@ -752,6 +765,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         novelStartYearInput.addEventListener('input', handleNovelInputChange); 
         novelSettingTextarea.addEventListener('input', handleNovelInputChange); 
         novelCharactersTextarea.addEventListener('input', handleNovelInputChange);
+        novelCommonElementsTextarea.addEventListener('input', handleNovelInputChange); // New
         
         copyCombinedNovelPromptButton.addEventListener('click', () => copyToClipboard(combinedNovelPromptTextarea.value, copyCombinedNovelPromptButton));
         addSubtitleButton.addEventListener('click', handleAddSubtitle);
