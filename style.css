@@ -418,6 +418,39 @@ button:active { transform: translateY(1px); }
     font-size: 0.9rem;
 }
 
+/* プロンプト項目選択チェックボックス */
+.prompt-options {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: #f8f9fa;
+}
+.prompt-options-label {
+    font-weight: 500;
+    margin-bottom: 0.8rem;
+    display: block;
+    color: var(--text-color);
+}
+.prompt-checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.8rem;
+}
+.prompt-checkbox-group label {
+    display: flex;
+    align-items: center;
+    font-weight: normal;
+    font-size: 0.9rem;
+    margin: 0;
+    cursor: pointer;
+    color: var(--text-light-color);
+}
+.prompt-checkbox-group input[type="checkbox"] {
+    margin-right: 0.5em;
+    width: auto; /* width: 100% を上書き */
+}
+
 /* サブタイトル追加ボタン (FAB) */
 #add-subtitle-button.fab-button {
     position: fixed; 

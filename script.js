@@ -170,6 +170,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                     if (novel.subtitles && Array.isArray(novel.subtitles)) {
                         novel.subtitles.forEach(sub => {
+                        // v4.1 migration: promptIncludes
+                        if (sub.promptIncludes === undefined) {
+                            sub.promptIncludes = {
+                                timeSequence: true, tone: true, subtitle: true,
+                                episode: true, length: true, plot: true, notes: true
+                            };
+                        }
                             if (sub.ethicsFilterDisabled === undefined) {
                                 sub.ethicsFilterDisabled = false;
                             }
@@ -271,8 +278,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         entry.dataset.subtitleIndex = subtitleIndex;
 
         const toggleBtn = entry.querySelector('.toggle-button'); 
-        const toggleBtnText = toggleBtn.querySelector('.toggle-button-text'); // New
-        // (他のDOM要素取得は既存のまま)
+        const toggleBtnText = toggleBtn.querySelector('.toggle-button-text');
         const subInput = entry.querySelector('.subtitle-input'); 
         const epSelect = entry.querySelector('.episode-select'); 
         const lenSelect = entry.querySelector('.length-select'); 
@@ -289,15 +295,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         const daySelect = entry.querySelector('.event-day-select');
         const timezoneSelect = entry.querySelector('.timezone-select');
         const ethicsFilterToggle = entry.querySelector('.ethics-filter-toggle'); 
+        const promptCheckboxes = entry.querySelectorAll('.prompt-checkbox-group input[type="checkbox"]');
 
-        // 値設定 (既存のまま)
+        // 値設定
         subInput.value = subtitleData.subtitle || ''; 
         lenSelect.value = subtitleData.length || '中尺'; 
         plotArea.value = subtitleData.plot || ''; 
         notesArea.value = subtitleData.notes || '';
         ethicsFilterToggle.checked = subtitleData.ethicsFilterDisabled || false; 
 
-        // プルダウン生成と選択 (既存のまま)
+        // プロンプト項目チェックボックスの状態を設定
+        promptCheckboxes.forEach(cb => {
+            const item = cb.dataset.promptItem;
+            if (subtitleData.promptIncludes && subtitleData.promptIncludes[item] !== undefined) {
+                cb.checked = subtitleData.promptIncludes[item];
+            } else {
+                cb.checked = true; // フォールバック
+            }
+        });
+
+        // プルダウン生成と選択
         [t1Select, t2Select, t3Select].forEach(select => { select.innerHTML = ''; availableTones.forEach(tone => { const opt = document.createElement('option'); opt.value = opt.textContent = tone; select.appendChild(opt); }); });
         t1Select.value = availableTones.includes(subtitleData.tone1) ? subtitleData.tone1 : (availableTones[0] || 'なし'); 
         t2Select.value = availableTones.includes(subtitleData.tone2) ? subtitleData.tone2 : (availableTones[0] || 'なし'); 
@@ -311,12 +328,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         updateSubtitleToggleButtonText(toggleBtnText, subtitleData.subtitle, subtitleData.episode);
 
-        // イベントリスナー (既存のまま)
+        // イベントリスナー
         const elementsToWatch = [
             subInput, epSelect, lenSelect, t1Select, t2Select, t3Select, 
             plotArea, notesArea,
             yearSelect, monthSelect, daySelect, timezoneSelect,
-            ethicsFilterToggle 
+            ethicsFilterToggle,
+            ...promptCheckboxes
         ];
         elementsToWatch.forEach(el => { 
             const eventType = (el.tagName === 'INPUT' && el.type === 'checkbox') ? 'change' : 
@@ -505,7 +523,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             eventMonth: 1, 
             eventDay: 1, 
             timeZone: availableTimezones[0],
-            ethicsFilterDisabled: false 
+            ethicsFilterDisabled: false,
+            promptIncludes: {
+                timeSequence: true, tone: true, subtitle: true,
+                episode: true, length: true, plot: true, notes: true
+            }
         };
         novel.subtitles.push(newSub); 
         addSubtitleElement(newSub, novel.subtitles.length - 1); 
@@ -527,9 +549,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (isNaN(index) || !novels[currentNovelIndex]?.subtitles?.[index]) return; 
         
         const subtitle = novels[currentNovelIndex].subtitles[index]; 
-        const toggleBtnText = entry.querySelector('.toggle-button .toggle-button-text'); // New
+        const toggleBtnText = entry.querySelector('.toggle-button .toggle-button-text');
         
-        if (target.classList.contains('subtitle-input')) { 
+        // プロンプト項目チェックボックスの処理
+        if (target.dataset.promptItem) {
+            const item = target.dataset.promptItem;
+            if (subtitle.promptIncludes) {
+                subtitle.promptIncludes[item] = target.checked;
+            }
+        }
+        else if (target.classList.contains('subtitle-input')) {
             subtitle.subtitle = target.value; 
             updateSubtitleToggleButtonText(toggleBtnText, target.value, subtitle.episode); 
         }
@@ -568,13 +597,96 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderNovelDetails(currentNovelIndex); 
     }
 
-    // --- Prompt Generation (既存のまま) ---
+    // --- Prompt Generation ---
     function generateCombinedNovelPrompt(novel) { /* ... */ }
-    function generateSubtitlePrompt(subtitle, novel) { /* ... */ }
+    function generateSubtitlePrompt(subtitle, novel) {
+        let promptLines = [];
+        // 安全のためのフォールバック
+        const includes = subtitle.promptIncludes || {
+            timeSequence: true, tone: true, subtitle: true, episode: true,
+            length: true, plot: true, notes: true
+        };
+
+        if (subtitle.ethicsFilterDisabled && ethicsFilterInstructions.length > 0) {
+            ethicsFilterInstructions.forEach(line => promptLines.push(line));
+            if (ethicsFilterInstructions[ethicsFilterInstructions.length - 1].trim() !== "") {
+                 promptLines.push(""); 
+            }
+        }
+
+        if (includes.timeSequence) {
+            let timeSequenceString = "";
+            const tsPrefix = "＃時系列 : ";
+            let tsParts = [];
+            let yearToDisplay = subtitle.eventYear;
+            if (yearToDisplay === undefined && novel.startYear !== undefined) {
+                yearToDisplay = novel.startYear;
+            }
+            if (novel.eraName && yearToDisplay !== undefined) {
+                tsParts.push(`${novel.eraName}${yearToDisplay}年`);
+            } else if (yearToDisplay !== undefined) {
+                tsParts.push(`${yearToDisplay}年`);
+            }
+            if (subtitle.eventMonth && subtitle.eventDay) {
+                tsParts.push(`${subtitle.eventMonth}月${subtitle.eventDay}日`);
+            } else if (subtitle.eventMonth) {
+                tsParts.push(`${subtitle.eventMonth}月`);
+            } else if (subtitle.eventDay) {
+                tsParts.push(`${subtitle.eventDay}日`);
+            }
+            if (subtitle.timeZone && subtitle.timeZone !== 'なし' && subtitle.timeZone !== availableTimezones[0]) {
+                tsParts.push(subtitle.timeZone);
+            }
+            if (tsParts.length > 0) {
+                timeSequenceString = tsPrefix + tsParts.join(' ');
+                promptLines.push(timeSequenceString);
+            }
+        }
+
+        const toneSpecified = (subtitle.tone1 && subtitle.tone1 !== 'なし') ||
+                              (subtitle.tone2 && subtitle.tone2 !== 'なし') ||
+                              (subtitle.tone3 && subtitle.tone3 !== 'なし');
+
+        if (includes.tone) {
+            promptLines.push("\n# トーン指示");
+            if (toneSpecified) {
+                if (subtitle.tone1 && subtitle.tone1 !== 'なし') {
+                    promptLines.push(`## 優先度高: ${subtitle.tone1}`);
+                    promptLines.push(toneExplanations.high);
+                }
+                if (subtitle.tone2 && subtitle.tone2 !== 'なし') {
+                    promptLines.push(`## 優先度中: ${subtitle.tone2}`);
+                    promptLines.push(toneExplanations.medium);
+                }
+                if (subtitle.tone3 && subtitle.tone3 !== 'なし') {
+                    promptLines.push(`## 優先度低: ${subtitle.tone3}`);
+                    promptLines.push(toneExplanations.low);
+                }
+            } else {
+                 promptLines.push("トーンの指定はありません。");
+            }
+        }
+
+        if (includes.subtitle) promptLines.push(`\n# サブタイトル: ${subtitle.subtitle || '（未設定）'}`);
+        if (includes.episode) promptLines.push(`# 話数: 第${subtitle.episode || '?'}話`);
+        if (includes.length) promptLines.push(`# 長さ: ${subtitle.length || '（未設定）'}`);
+
+        if (includes.plot) {
+            promptLines.push(`\n# プロット`);
+            promptLines.push(subtitle.plot || '※ここからプロットスタート');
+        }
+
+        if (includes.notes) {
+            promptLines.push(`\n# 特記事項`);
+            promptLines.push(subtitle.notes || '※ここから特記事項スタート');
+        }
+        
+        return promptLines.join('\n').trim();
+    }
     function updateCombinedNovelPrompt() { /* ... */ }
     function updateSubtitlePromptOutput(element, index) { /* ... */ }
     // (上記4つの関数の内容は前回の回答と同じなので省略)
-    function generateCombinedNovelPrompt(novel) { 
+    function generateCombinedNovelPrompt(novel) {
         let prompt = `# タイトル\n${novel.title || '（未設定）'}\n`;
         if (novel.eraName || novel.startYear !== undefined) {
             prompt += `\n# 基本時系列設定\n`;
@@ -584,72 +696,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         prompt += `\n# 舞台設定\n${novel.setting || '（未設定）'}\n`;
         prompt += `\n# キャラクター設定\n${novel.characters || '（未設定）'}\n`;
         return prompt.trim();
-    }
-    function generateSubtitlePrompt(subtitle, novel) {
-        let promptLines = [];
-
-        if (subtitle.ethicsFilterDisabled && ethicsFilterInstructions.length > 0) {
-            ethicsFilterInstructions.forEach(line => promptLines.push(line));
-            if (ethicsFilterInstructions[ethicsFilterInstructions.length - 1].trim() !== "") {
-                 promptLines.push(""); 
-            }
-        }
-
-        let timeSequenceString = "";
-        const tsPrefix = "＃時系列 : ";
-        let tsParts = [];
-        let yearToDisplay = subtitle.eventYear;
-        if (yearToDisplay === undefined && novel.startYear !== undefined) {
-            yearToDisplay = novel.startYear;
-        }
-        if (novel.eraName && yearToDisplay !== undefined) {
-            tsParts.push(`${novel.eraName}${yearToDisplay}年`);
-        } else if (yearToDisplay !== undefined) {
-            tsParts.push(`${yearToDisplay}年`);
-        }
-        if (subtitle.eventMonth && subtitle.eventDay) {
-            tsParts.push(`${subtitle.eventMonth}月${subtitle.eventDay}日`);
-        } else if (subtitle.eventMonth) {
-            tsParts.push(`${subtitle.eventMonth}月`);
-        } else if (subtitle.eventDay) {
-            tsParts.push(`${subtitle.eventDay}日`);
-        }
-        if (subtitle.timeZone && subtitle.timeZone !== 'なし' && subtitle.timeZone !== availableTimezones[0]) {
-            tsParts.push(subtitle.timeZone);
-        }
-        if (tsParts.length > 0) {
-            timeSequenceString = tsPrefix + tsParts.join(' ');
-            promptLines.push(timeSequenceString);
-        }
-
-        promptLines.push("\n# トーン指示");
-        if (subtitle.tone1 && subtitle.tone1 !== 'なし') {
-            promptLines.push(`## 優先度高: ${subtitle.tone1}`);
-            promptLines.push(toneExplanations.high);
-        }
-        if (subtitle.tone2 && subtitle.tone2 !== 'なし') {
-            promptLines.push(`## 優先度中: ${subtitle.tone2}`);
-            promptLines.push(toneExplanations.medium);
-        }
-        if (subtitle.tone3 && subtitle.tone3 !== 'なし') {
-            promptLines.push(`## 優先度低: ${subtitle.tone3}`);
-            promptLines.push(toneExplanations.low);
-        }
-        if ((!subtitle.tone1 || subtitle.tone1 === 'なし') && 
-            (!subtitle.tone2 || subtitle.tone2 === 'なし') &&
-            (!subtitle.tone3 || subtitle.tone3 === 'なし')) {
-             promptLines.push("トーンの指定はありません。");
-        }
-
-        promptLines.push(`\n# サブタイトル: ${subtitle.subtitle || '（未設定）'}`);
-        promptLines.push(`# 話数: 第${subtitle.episode || '?'}話`);
-        promptLines.push(`# 長さ: ${subtitle.length || '（未設定）'}`);
-        promptLines.push(`\n# プロット`);
-        promptLines.push(subtitle.plot || '※ここからプロットスタート');
-        promptLines.push(`\n# 特記事項`);
-        promptLines.push(subtitle.notes || '※ここから特記事項スタート');
-        
-        return promptLines.join('\n').trim();
     }
     function updateCombinedNovelPrompt() { 
         combinedNovelPromptTextarea.value = (currentNovelIndex !== null && novels[currentNovelIndex]) ? generateCombinedNovelPrompt(novels[currentNovelIndex]) : ''; 
