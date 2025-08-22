@@ -540,17 +540,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (firstInput) firstInput.focus();
         }
     }
-    function handleSubtitleInputChange(event) { 
-        if (currentNovelIndex === null) return; 
-        const target = event.target; 
-        const entry = target.closest('.subtitle-entry'); 
-        if (!entry) return; 
-        const index = parseInt(entry.dataset.subtitleIndex, 10); 
-        if (isNaN(index) || !novels[currentNovelIndex]?.subtitles?.[index]) return; 
-        
-        const subtitle = novels[currentNovelIndex].subtitles[index]; 
+    function handleSubtitleInputChange(eventOrElement) {
+        if (currentNovelIndex === null) return;
+        const target = eventOrElement.target || eventOrElement; // 引数がイベントか要素かを判定
+        const entry = target.closest('.subtitle-entry');
+        if (!entry) return;
+        const index = parseInt(entry.dataset.subtitleIndex, 10);
+        if (isNaN(index) || !novels[currentNovelIndex]?.subtitles?.[index]) return;
+
+        const subtitle = novels[currentNovelIndex].subtitles[index];
         const toggleBtnText = entry.querySelector('.toggle-button .toggle-button-text');
-        
+
         // プロンプト項目チェックボックスの処理
         if (target.dataset.promptItem) {
             const item = target.dataset.promptItem;
@@ -559,24 +559,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
         else if (target.classList.contains('subtitle-input')) {
-            subtitle.subtitle = target.value; 
-            updateSubtitleToggleButtonText(toggleBtnText, target.value, subtitle.episode); 
+            subtitle.subtitle = target.value;
+            updateSubtitleToggleButtonText(toggleBtnText, target.value, subtitle.episode);
         }
-        else if (target.classList.contains('episode-select')) { 
-            subtitle.episode = parseInt(target.value, 10) || 1; 
-            updateSubtitleToggleButtonText(toggleBtnText, subtitle.subtitle, subtitle.episode); 
+        else if (target.classList.contains('episode-select')) {
+            subtitle.episode = parseInt(target.value, 10) || 1;
+            updateSubtitleToggleButtonText(toggleBtnText, subtitle.subtitle, subtitle.episode);
         }
-        else if (target.classList.contains('length-select')) subtitle.length = target.value; 
-        else if (target.classList.contains('tone1-select')) subtitle.tone1 = target.value; 
-        else if (target.classList.contains('tone2-select')) subtitle.tone2 = target.value; 
-        else if (target.classList.contains('tone3-select')) subtitle.tone3 = target.value; 
-        else if (target.classList.contains('plot-textarea')) subtitle.plot = target.value; 
+        else if (target.classList.contains('length-select')) subtitle.length = target.value;
+        else if (target.classList.contains('tone1-select')) subtitle.tone1 = target.value;
+        else if (target.classList.contains('tone2-select')) subtitle.tone2 = target.value;
+        else if (target.classList.contains('tone3-select')) subtitle.tone3 = target.value;
+        else if (target.classList.contains('plot-textarea')) subtitle.plot = target.value;
         else if (target.classList.contains('notes-textarea')) subtitle.notes = target.value;
         else if (target.classList.contains('event-year-select')) subtitle.eventYear = parseInt(target.value, 10);
         else if (target.classList.contains('event-month-select')) subtitle.eventMonth = parseInt(target.value, 10);
         else if (target.classList.contains('event-day-select')) subtitle.eventDay = parseInt(target.value, 10);
         else if (target.classList.contains('timezone-select')) subtitle.timeZone = target.value;
-        else if (target.classList.contains('ethics-filter-toggle')) { 
+        else if (target.classList.contains('ethics-filter-toggle')) {
             subtitle.ethicsFilterDisabled = target.checked;
             if (target.checked && !ethicsWarningShown) {
                 alert("「倫理フィルターを解除」がオンになりました。\nAIが生成するコンテンツには、予期せず不快な表現や社会通念から逸脱した内容が含まれる可能性があります。\nこの機能の利用は自己の責任において行い、生成されたコンテンツを不適切に利用しないでください。\nこの警告は一度のみ表示されます。");
@@ -584,9 +584,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 localStorage.setItem('ethicsWarningShown_v1', JSON.stringify(true));
             }
         }
-        
-        updateSubtitlePromptOutput(entry, index); 
-        saveData(); 
+
+        updateSubtitlePromptOutput(entry, index);
+        saveData();
     }
     function deleteSubtitle(subtitleIndex) { 
         if (currentNovelIndex === null) return; 
@@ -735,21 +735,28 @@ document.addEventListener('DOMContentLoaded', async () => {
             if(button){ const orig = button.textContent, origIcon = button.innerHTML; button.innerHTML = '<i class="fas fa-check"></i> コピー完了'; button.style.backgroundColor = '#48bb78'; setTimeout(() => {button.innerHTML = origIcon; button.style.backgroundColor = '';}, 1500);} 
         }).catch(err => {console.error('Copy failed:', err); alert('コピーに失敗しました。');}); 
     }
-    async function pasteFromClipboard(target) { 
-        try { 
+    async function pasteFromClipboard(target) {
+        try {
             if (!navigator.clipboard || !navigator.clipboard.readText) {
                 alert('このブラウザではクリップボードの読み取りがサポートされていません。');
                 return;
             }
-            const text = await navigator.clipboard.readText(); 
-            if(text === undefined) throw new Error('Clipboard API not supported or permission denied'); 
-            const start = target.selectionStart, end = target.selectionEnd; 
-            target.value = target.value.substring(0, start) + text + target.value.substring(end); 
-            target.selectionStart = target.selectionEnd = start + text.length; 
-            target.focus(); 
-            target.dispatchEvent(new Event('input',{bubbles:true})); 
-            target.dispatchEvent(new Event('change',{bubbles:true})); 
-        } catch(err){ console.error('Paste failed:', err); alert('ペーストに失敗しました。権限を確認してください。'); } 
+            const text = await navigator.clipboard.readText();
+            if(text === undefined) throw new Error('Clipboard API not supported or permission denied');
+            const start = target.selectionStart, end = target.selectionEnd;
+            target.value = target.value.substring(0, start) + text + target.value.substring(end);
+            target.selectionStart = target.selectionEnd = start + text.length;
+            target.focus();
+
+            // 既存のイベントディスパッチは、小説基本設定などの他のフィールドのために維持
+            target.dispatchEvent(new Event('input',{bubbles:true}));
+            target.dispatchEvent(new Event('change',{bubbles:true}));
+
+            // サブタイトル関連のフィールドの場合、変更を確実に反映させるためにハンドラを直接呼び出す
+            if (target.closest('.subtitle-entry')) {
+                handleSubtitleInputChange(target);
+            }
+        } catch(err){ console.error('Paste failed:', err); alert('ペーストに失敗しました。権限を確認してください。'); }
     }
 
 
