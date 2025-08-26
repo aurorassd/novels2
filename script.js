@@ -1,4 +1,9 @@
 // グローバルスコープ (既存のまま)
+const lengthDescriptions = {
+    "Short": "Short (Approx. 400 tokens / 600 Japanese characters)\nThis length is intended for a single response of about 400 tokens (approx. 600 Japanese characters). It is best suited for depicting a single, specific scene or element, rather than a complete story.",
+    "Medium": "Medium (Approx. 700 tokens / 1050 Japanese characters)\nThis length is intended for a single response of about 700 tokens (approx. 1050 Japanese characters). While still concise, it can incorporate a simple but complete plot structure (a beginning, middle, and end), making it suitable for describing a self-contained episode.",
+    "Long": "Long (Approx. 1000 tokens / 1500 Japanese characters)\nThis length is intended for a single response of about 1000 tokens (approx. 1500 Japanese characters). It allows for rich descriptions of characters' emotions and scenery, making it suitable for creating a substantial and satisfying short story."
+};
 let availableTones = ['なし', 'シリアス', 'コミカル', 'アダルト', '緊迫', '穏やか'];
 const availableTimezones = ['なし', '朝方', '午前', '正午', '午後', '夕刻', '夜', '深夜']; 
 const MAX_EPISODES = 500; 
@@ -299,7 +304,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 値設定
         subInput.value = subtitleData.subtitle || ''; 
-        lenSelect.value = subtitleData.length || '中尺'; 
+        lenSelect.value = subtitleData.length || 'Medium';
         plotArea.value = subtitleData.plot || ''; 
         notesArea.value = subtitleData.notes || '';
         ethicsFilterToggle.checked = subtitleData.ethicsFilterDisabled || false; 
@@ -510,10 +515,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const defaultStartYear = novel.startYear !== undefined ? novel.startYear : new Date().getFullYear();
 
+        // Checkbox state carry-over logic
+        const lastSubtitle = novel.subtitles.length > 0 ? novel.subtitles[novel.subtitles.length - 1] : null;
+        const promptIncludes = lastSubtitle
+            ? { ...lastSubtitle.promptIncludes }
+            : {
+                timeSequence: true, tone: true, subtitle: true,
+                episode: true, length: true, plot: true, notes: true
+            };
+
         const newSub = { 
             subtitle: '', 
             episode: nextEpisode, 
-            length: '中尺', 
+            length: 'Medium',
             tone1: availableTones[0] || 'なし', 
             tone2: availableTones[0] || 'なし', 
             tone3: availableTones[0] || 'なし', 
@@ -524,10 +538,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             eventDay: 1, 
             timeZone: availableTimezones[0],
             ethicsFilterDisabled: false,
-            promptIncludes: {
-                timeSequence: true, tone: true, subtitle: true,
-                episode: true, length: true, plot: true, notes: true
-            }
+            promptIncludes: promptIncludes
         };
         novel.subtitles.push(newSub); 
         addSubtitleElement(newSub, novel.subtitles.length - 1); 
@@ -669,7 +680,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (includes.subtitle) promptLines.push(`\n# サブタイトル: ${subtitle.subtitle || '（未設定）'}`);
         if (includes.episode) promptLines.push(`# 話数: 第${subtitle.episode || '?'}話`);
-        if (includes.length) promptLines.push(`# 長さ: ${subtitle.length || '（未設定）'}`);
+
+        if (includes.length) {
+            const lengthValue = subtitle.length || 'Medium'; // フォールバック
+            const lengthDescription = lengthDescriptions[lengthValue];
+            promptLines.push(`\n# Length: ${lengthValue}`);
+            if (lengthDescription) {
+                promptLines.push(lengthDescription);
+            }
+        }
 
         if (includes.plot) {
             promptLines.push(`\n# プロット`);
