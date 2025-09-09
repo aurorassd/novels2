@@ -60,7 +60,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const modalWindow = document.getElementById('modal-window');
     const closeModalBtn = document.getElementById('close-modal-btn');
     const instructionsList = document.getElementById('instructions-list');
-    const selectAllInstructionsCheckbox = document.getElementById('select-all-instructions');
 
 
     // --- Application State ---
@@ -830,27 +829,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- Instructions Modal Functions ---
-    function updateSelectAllCheckboxState() {
-        const allCheckboxes = instructionsList.querySelectorAll('.instruction-item input[type="checkbox"]');
-        if (allCheckboxes.length === 0) {
-            selectAllInstructionsCheckbox.checked = false;
-            selectAllInstructionsCheckbox.indeterminate = false;
-            return;
-        }
-        const checkedCount = Array.from(allCheckboxes).filter(cb => cb.checked).length;
-
-        if (checkedCount === 0) {
-            selectAllInstructionsCheckbox.checked = false;
-            selectAllInstructionsCheckbox.indeterminate = false;
-        } else if (checkedCount === allCheckboxes.length) {
-            selectAllInstructionsCheckbox.checked = true;
-            selectAllInstructionsCheckbox.indeterminate = false;
-        } else {
-            selectAllInstructionsCheckbox.checked = false;
-            selectAllInstructionsCheckbox.indeterminate = true;
-        }
-    }
-
     function getFavorites() {
         try {
             const favorites = localStorage.getItem(FAVORITES_KEY);
@@ -922,7 +900,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     } else {
                         checkedInstructionIds.delete(checkboxId);
                     }
-                    updateSelectAllCheckboxState();
                 });
 
                 const label = document.createElement('label');
@@ -947,7 +924,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 instructionsList.appendChild(itemDiv);
             });
         });
-        updateSelectAllCheckboxState();
     }
 
     function openInstructionsModal(targetTextarea) {
@@ -960,20 +936,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     function closeInstructionsModal() {
         modalWindow.classList.add('hidden');
         document.body.style.overflow = '';
-    }
-
-    function handleSelectAllInstructions(event) {
-        const isChecked = event.target.checked;
-        const allCheckboxes = instructionsList.querySelectorAll('.instruction-item input[type="checkbox"]');
-
-        allCheckboxes.forEach(checkbox => {
-            // Only dispatch event if the state is actually changing
-            if (checkbox.checked !== isChecked) {
-                checkbox.checked = isChecked;
-                // Dispatch a change event so the main handler catches it
-                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        });
     }
 
     function applyAndCloseInstructions() {
@@ -1059,7 +1021,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // --- Modal-specific Listeners ---
         closeModalBtn.addEventListener('click', applyAndCloseInstructions);
-        selectAllInstructionsCheckbox.addEventListener('change', handleSelectAllInstructions);
 
         modalWindow.addEventListener('click', (event) => {
             // Close modal if clicking on the background overlay
