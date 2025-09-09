@@ -56,11 +56,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const subtitleListContainer = document.getElementById('subtitle-list');
     const subtitleTemplate = document.getElementById('subtitle-template');
 
+    // --- DOM Elements for Instructions Modal ---
+    const modalWindow = document.getElementById('modal-window');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const instructionsList = document.getElementById('instructions-list');
+
 
     // --- Application State ---
     let novels = [];
     let currentNovelIndex = null;
     let ethicsWarningShown = JSON.parse(localStorage.getItem('ethicsWarningShown_v1')) || false;
+
+    // --- State for Instructions Modal ---
+    let instructionsData = null;
+    let currentTargetTextarea = null;
+    let checkedInstructionIds = new Set();
+    const FAVORITES_KEY = 'favoritePrompts';
 
 
     // --- File Loading Functions (既存のまま) ---
@@ -143,12 +154,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    async function loadInstructionsFromFile() {
+        try {
+            const response = await fetch('./instructions.json');
+            if (!response.ok) {
+                throw new Error(`HTTP error loading instructions.json: ${response.status}`);
+            }
+            instructionsData = await response.json();
+        } catch (error) {
+            console.error('Failed to load instructions.json.', error);
+            alert('Could not load the configuration file.');
+            instructionsData = { instructions: [] }; // Set a default empty state
+        }
+    }
+
 
     // --- Initialization ---
     await Promise.all([ // ファイル読み込みを並列化
         loadTonesFromFile(),
         loadToneExplanationsFromFile(),
-        loadEthicsFilterInstructionsFromFile()
+        loadEthicsFilterInstructionsFromFile(),
+        loadInstructionsFromFile()
     ]);
     loadData();
     renderNovelList();
@@ -802,6 +828,155 @@ document.addEventListener('DOMContentLoaded', async () => {
         } 
     }
 
+    // --- Instructions Modal Functions ---
+    function getFavorites() {
+        try {
+            const favorites = localStorage.getItem(FAVORITES_KEY);
+            return favorites ? JSON.parse(favorites) : [];
+        } catch (e) {
+            console.error("Error reading favorites from localStorage", e);
+            return [];
+        }
+    }
+
+    function saveFavorites(favorites) {
+        try {
+            localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+        } catch (e) {
+            console.error("Error saving favorites to localStorage", e);
+        }
+    }
+
+    function toggleFavorite(id) {
+        let favorites = getFavorites();
+        const numId = parseInt(id, 10);
+        const index = favorites.indexOf(numId);
+
+        if (index > -1) {
+            favorites.splice(index, 1);
+        } else {
+            favorites.push(numId);
+        }
+        saveFavorites(favorites);
+        return favorites.includes(numId);
+    }
+
+    function buildInstructionsList() {
+        if (!instructionsData || !instructionsData.instructions) {
+            instructionsList.innerHTML = '<p>Instruction data is not available.</p>';
+            return;
+        }
+
+        instructionsList.innerHTML = ''; // Clear previous list
+        const favorites = getFavorites();
+
+        instructionsData.instructions.forEach(category => {
+            const categoryHeader = document.createElement('h3');
+            categoryHeader.textContent = category.category;
+            instructionsList.appendChild(categoryHeader);
+
+            const sortedItems = [...category.items].sort((a, b) => {
+                const aIsFav = favorites.includes(a.id);
+                const bIsFav = favorites.includes(b.id);
+                if (aIsFav === bIsFav) return 0;
+                return aIsFav ? -1 : 1;
+            });
+
+            sortedItems.forEach(item => {
+                const isFavorited = favorites.includes(item.id);
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'instruction-item';
+
+                const checkboxId = `inst-${item.id}`;
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = checkboxId;
+                checkbox.value = item.text;
+                checkbox.checked = checkedInstructionIds.has(checkboxId);
+
+                checkbox.addEventListener('change', () => {
+                    if (checkbox.checked) {
+                        checkedInstructionIds.add(checkboxId);
+                    } else {
+                        checkedInstructionIds.delete(checkboxId);
+                    }
+                });
+
+                const label = document.createElement('label');
+                label.htmlFor = checkboxId;
+                label.textContent = item.label;
+
+                const star = document.createElement('span');
+                star.className = 'fav-star';
+                star.textContent = isFavorited ? '★' : '☆';
+                if (isFavorited) star.classList.add('favorited');
+                star.dataset.id = item.id;
+
+                star.addEventListener('click', () => {
+                    toggleFavorite(star.dataset.id);
+                    // Re-sort and re-render the list to move the item
+                    buildInstructionsList();
+                });
+
+                itemDiv.appendChild(checkbox);
+                itemDiv.appendChild(label);
+                itemDiv.appendChild(star);
+                instructionsList.appendChild(itemDiv);
+            });
+        });
+    }
+
+    function openInstructionsModal(targetTextarea) {
+        currentTargetTextarea = targetTextarea;
+        buildInstructionsList();
+        modalWindow.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    function closeInstructionsModal() {
+        modalWindow.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    function applyAndCloseInstructions() {
+        if (currentTargetTextarea) {
+            const allItems = instructionsData.instructions.flatMap(cat => cat.items);
+            const selectedItems = allItems.filter(item => checkedInstructionIds.has(`inst-${item.id}`));
+
+            const header = '■追加指示\nThe following bullet points are specific instructions to be prioritized for this chapter. To enhance the quality of the narrative, please adhere strictly to these directives and creatively incorporate them into the text.';
+            const regex = /^■追加指示[\s\S]*/m;
+
+            let currentText = currentTargetTextarea.value;
+
+            // Always remove the existing block first to ensure clean replacement
+            if (regex.test(currentText)) {
+                currentText = currentText.replace(regex, '').trim();
+            }
+
+            if (selectedItems.length > 0) {
+                const instructionLines = selectedItems.map(item => `- ${item.text}`);
+                const newBlock = `${header}\n${instructionLines.join('\n')}`;
+
+                if (currentText.length > 0) {
+                     currentTargetTextarea.value = `${currentText}\n\n${newBlock}`;
+                } else {
+                     currentTargetTextarea.value = newBlock;
+                }
+            } else {
+                currentTargetTextarea.value = currentText; // Already trimmed from removal
+            }
+
+            // Trigger the main app's save mechanism
+            currentTargetTextarea.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+        }
+
+        // Reset state for the next use and close the modal
+        checkedInstructionIds.clear();
+        currentTargetTextarea = null;
+        closeInstructionsModal();
+    }
+
+
     // --- Global Event Listeners Setup ---
     function addGlobalEventListeners() {
         menuButton.addEventListener('click', handleMenuToggle); 
@@ -823,20 +998,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         document.querySelectorAll('#novel-setup .collapsible-section, #subtitles-section .collapsible-section').forEach(addCollapsibleFunctionality); 
         
+        // --- Delegated Event Listeners ---
         document.body.addEventListener('click', async (e) => {
-            const t = e.target.closest('button'); // ボタン自体か、ボタン内のアイコンか
-            if (!t) return;
+            const button = e.target.closest('button');
+            if (!button) return;
 
-            if (t.matches('.copy-btn[data-target]')) { const el = document.getElementById(t.dataset.target); if (el) copyToClipboard(el.value, t); }
-            else if (t.matches('.copy-btn[data-target-class]')) { const c = t.closest('.collapsible-content')?.querySelector(`.${t.dataset.targetClass}`); if (c) copyToClipboard(c.value, t); }
-            else if (t.matches('.paste-btn[data-target]')) { const el = document.getElementById(t.dataset.target); if (el) await pasteFromClipboard(el); }
-            else if (t.matches('.paste-btn[data-target-class]')) { const c = t.closest('.collapsible-content')?.querySelector(`.${t.dataset.targetClass}`); if (c) await pasteFromClipboard(c); }
+            // Copy/Paste buttons
+            if (button.matches('.copy-btn[data-target]')) { const el = document.getElementById(button.dataset.target); if (el) copyToClipboard(el.value, button); }
+            else if (button.matches('.copy-btn[data-target-class]')) { const c = button.closest('.collapsible-content')?.querySelector(`.${button.dataset.targetClass}`); if (c) copyToClipboard(c.value, button); }
+            else if (button.matches('.paste-btn[data-target]')) { const el = document.getElementById(button.dataset.target); if (el) await pasteFromClipboard(el); }
+            else if (button.matches('.paste-btn[data-target-class]')) { const c = button.closest('.collapsible-content')?.querySelector(`.${button.dataset.targetClass}`); if (c) await pasteFromClipboard(c); }
+
+            // Add Instructions button
+            else if (button.matches('.add-instructions-btn')) {
+                const subtitleEntry = button.closest('.subtitle-entry');
+                const notesTextarea = subtitleEntry?.querySelector('.notes-textarea');
+                if (notesTextarea) {
+                    openInstructionsModal(notesTextarea);
+                }
+            }
         });
 
-        // Escapeキーでメニューを閉じる
+        // --- Modal-specific Listeners ---
+        closeModalBtn.addEventListener('click', applyAndCloseInstructions);
+
+        modalWindow.addEventListener('click', (event) => {
+            // Close modal if clicking on the background overlay
+            if (event.target === modalWindow) {
+                closeInstructionsModal();
+            }
+        });
+
+        // Escapeキーでメニューやモーダルを閉じる
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && novelMenu.classList.contains('visible')) {
-                closeMenu();
+            if (e.key === 'Escape') {
+                if (novelMenu.classList.contains('visible')) {
+                    closeMenu();
+                } else if (!modalWindow.classList.contains('hidden')) {
+                    closeInstructionsModal();
+                }
             }
         });
     }

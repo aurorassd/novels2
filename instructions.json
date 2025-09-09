@@ -1,0 +1,18 @@
+{
+  "instructions": [
+    {
+      "category": "アクション (Action)",
+      "items": [
+        { "id": 101, "text": "The protagonist parries an attack with their weapon, creating a shower of sparks.", "label": "主人公が武器で攻撃を受け流し、火花が飛び散る" },
+        { "id": 102, "text": "Describe a character reloading their firearm with practiced, precise movements under pressure.", "label": "緊迫した状況下、手慣れた精密な動作で銃をリロードする" }
+      ]
+    },
+    {
+      "category": "メンタル (Mental)",
+      "items": [
+        { "id": 161, "text": "Depict a character experiencing a vivid flashback of a past trauma, triggered by a sound or smell.", "label": "音や匂いが引き金となり、過去のトラウマを鮮明にフラッシュバックする" },
+        { "id": 162, "text": "Describe a character's internal monologue spiraling into paranoia, misinterpreting others' actions.", "label": "思考がパラノイアに陥っていく内面を描写する" }
+      ]
+    }
+  ]
+}

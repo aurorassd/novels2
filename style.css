@@ -535,3 +535,141 @@ hr.section-divider {
     .tooltip-text { left: 0; transform: translateX(0); width: calc(100% - 2rem); bottom: 100%; margin-bottom: 8px;} /* 位置調整 */
     .tooltip-text::after { left: 20px; } /* 吹き出しの位置調整 */
 }
+
+/* --- Additional Instructions Modal --- */
+#modal-window {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1020; /* Higher than menu overlay */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+    visibility: hidden;
+}
+
+#modal-window:not(.hidden) {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content-wrapper {
+    width: 90%;
+    max-width: 650px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.95);
+    transition: transform 0.2s ease-in-out;
+}
+#modal-window:not(.hidden) .modal-content-wrapper {
+    transform: scale(1);
+}
+
+
+.modal-content-inner {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Prevents box-shadow from being clipped by children's border-radius */
+    padding: 1.5rem; /* Re-add padding since we are using .card */
+}
+
+.modal-content-inner h2 {
+    flex-shrink: 0;
+    margin-top: 0;
+}
+
+.instructions-list-container {
+    overflow-y: auto;
+    /* Custom scrollbar for webkit browsers */
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+    &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 4px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+        background: #aaa;
+    }
+    padding-right: 1rem;
+    margin-right: -1rem;
+    flex-grow: 1;
+}
+
+.instruction-item {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 0.2rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.instruction-item:last-child {
+    border-bottom: none;
+}
+
+.instruction-item input[type="checkbox"] {
+    width: auto;
+    margin-right: 0.8rem;
+    transform: scale(1.2);
+    accent-color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.instruction-item label {
+    flex-grow: 1;
+    margin: 0;
+    font-weight: normal;
+    color: var(--text-color);
+    cursor: pointer;
+}
+
+.fav-star {
+    font-size: 1.5rem;
+    color: #ccc;
+    cursor: pointer;
+    margin-left: 1rem;
+    transition: color 0.2s ease, transform 0.1s ease;
+    padding: 5px;
+    flex-shrink: 0;
+}
+
+.fav-star:hover {
+    transform: scale(1.1);
+}
+
+.fav-star.favorited {
+    color: var(--warning-color);
+}
+
+.modal-actions {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+#close-modal-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 0.8rem;
+    width: 100%;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+#close-modal-btn:hover {
+    background-color: #3a79c2;
+}
